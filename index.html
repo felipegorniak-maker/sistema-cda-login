@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gestão de Extinção de Processos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-xl font-bold text-blue-900">Controle de Extinção</h1>
+            <p class="text-xs text-gray-500 mt-1">Divisão de Arrecadação e Dívida Ativa</p>
+        </div>
+
+        <form id="form-login">
+            <!-- Campo de E-mail -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">E-mail institucional</label>
+                <input type="email" id="email" autocomplete="username" required 
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+            </div>
+
+            <!-- Campo de Senha -->
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700">Senha</label>
+                <input type="password" id="senha" autocomplete="current-password" required 
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+            </div>
+
+            <!-- Botão de submissão -->
+            <button type="submit" id="btn-entrar" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md font-medium transition">
+                Entrar no Sistema
+            </button>
+        </form>
+    </div>
+
+    <!-- Script de Autenticação Segura via Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZXAwS1e5Vj0zeL3ua74dEZ1NJMXLnLZ0",
+            authDomain: "extincaoprocessos.firebaseapp.com",
+            projectId: "extincaoprocessos",
+            storageBucket: "extincaoprocessos.firebasestorage.app",
+            messagingSenderId: "166925419028",
+            appId: "1:166925419028:web:a516d6192d8cd6343fdd01"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const senhaDigitada = document.getElementById('senha').value.trim();
+            const btnEntrar = document.getElementById('btn-entrar');
+
+            try {
+                btnEntrar.disabled = true;
+                btnEntrar.textContent = "Verificando acesso...";
+
+                // Consulta estrita na coleção "usuarios" do Firestore
+                const userDocRef = doc(db, "usuarios", email);
+                const userSnap = await getDoc(userDocRef);
+
+                if (userSnap.exists()) {
+                    const dadosUsuario = userSnap.data();
+                    
+                    // Valida a senha cadastrada para este usuário específico
+                    if (dadosUsuario.senha === senhaDigitada) {
+                        localStorage.setItem('usuarioLogado', email);
+                        
+                        // NOTA: Se decidir hospedar o login na web (GitHub), 
+                        // altere a linha abaixo para o caminho completo da rede (file:///V:/...)
+                        window.location.href = 'index.html';
+                    } else {
+                        alert("Acesso negado: Senha incorreta.");
+                        btnEntrar.disabled = false;
+                        btnEntrar.textContent = "Entrar no Sistema";
+                    }
+                } else {
+                    alert("Acesso negado: Este e-mail não possui cadastro autorizado no sistema.");
+                    btnEntrar.disabled = false;
+                    btnEntrar.textContent = "Entrar no Sistema";
+                }
+
+            } catch (error) {
+                console.error("Erro no login:", error);
+                alert("Erro ao conectar ao banco de dados: " + error.message);
+                btnEntrar.disabled = false;
+                btnEntrar.textContent = "Entrar no Sistema";
+            }
+        });
+    </script>
+</body>
+</html>
